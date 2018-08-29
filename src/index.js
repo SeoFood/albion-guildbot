@@ -9,7 +9,7 @@ const low = require('lowdb');
 
 const Albion = require('./AlbionApi');
 const Battle = require('./Battle').default;
-const { createImage, createInventoryImage, getItemUrl } = require('./createImage');
+const { createImage, getItemUrl } = require('./createImage');
 
 const config = require('../config');
 
