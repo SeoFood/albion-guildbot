@@ -151,32 +151,51 @@ function sendBattleReport(battle, channelId) {
 
 function sendKillReport(event, channelId) {
   const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1;
+  const isAssist = event.Participants.some(participants => {
+    return config.guild.guilds.indexOf(participants.GuildName) !== -1;
+  });
 
   createImage('Victim', event).then(imgBuffer => {
-    const participants = parseInt(event.numberOfParticipants || event.GroupMembers.length, 10);
-    const assists = participants - 1;
+    let assists = event.Participants.length - 1;
+
+    let damageDone = event.Participants.reduce((accumulator, participant) => {
+      return accumulator + Math.round(participant.DamageDone);
+    }, 0);
 
     const embed = {
       url: `https://albiononline.com/en/killboard/kill/${event.EventId}`,
-      title: `${event.Killer.Name} (${assists ? '+' + assists : 'Solo!'}) just killed ${event.Victim.Name}!`,
+      title: `${event.Killer.Name} (${assists > 0 ? '+' + assists : 'Solo!'}) just killed ${event.Victim.Name}!`,
       description: `From guild: ${createGuildTag(event[isFriendlyKill ? 'Victim' : 'Killer'])}`,
-      color: isFriendlyKill ? 65280 : 16711680,
+      color: isFriendlyKill || isAssist ? 65280 : 16711680,
       image: { url: 'attachment://kill.png' },
     };
 
-    if (event.TotalVictimKillFame > config.kill.minFame) {
-      Object.assign(embed, {
-        thumbnail: { url: getItemUrl(event.Killer.Equipment.MainHand) },
-        title: `${event.Killer.Name} just killed ${event.Victim.Name}!`,
-        description: assists
-          ? `Assisted by ${assists} other player${assists > 1 ? 's' : ''}.`
-          : 'Solo kill!',
-        fields: [{
-          name: isFriendlyKill ? 'Victim\'s Guild' : 'Killer\'s Guild',
-          value: createGuildTag(event[isFriendlyKill ? 'Victim' : 'Killer']),
-          inline: true,
-        }],
-        timestamp: event.TimeStamp,
+    Object.assign(embed, {
+      thumbnail: { url: getItemUrl(event.Killer.Equipment.MainHand) },
+      title: `${event.Killer.Name} just killed ${event.Victim.Name}!`,
+      description: assists > 0 ? `Assisted by ${assists} other player${assists > 1 ? 's' : ''}.` : 'Solo kill!',
+      fields: [{
+        name: isFriendlyKill ? 'Victim\'s Guild' : 'Killer\'s Guild',
+        value: createGuildTag(event[isFriendlyKill ? 'Victim' : 'Killer']),
+        inline: true,
+      }, {
+        name: 'Damage',
+        value: damageDone.toString()
+      }],
+      timestamp: event.TimeStamp,
+    });
+
+    if (assists > 0) {
+      let participants = [];
+
+      event.Participants.forEach(participant => {
+        participants.push(participant.Name + ' (' + Math.round(participant.DamageDone / damageDone * 100) + '%)');
+      });
+
+      embed.fields.push({
+        name: 'Participants',
+        value: participants.join(', '),
+        inline: true,
       });
     }
 
@@ -195,13 +214,17 @@ function checkKillboard() {
 
     events.sort((a, b) => a.EventId - b.EventId)
       .filter(event => event.EventId > lastEventId)
+      .filter(event => event.TotalVictimKillFame >= config.kill.minFame)
       .forEach(event => {
         lastEventId = event.EventId;
 
         const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1;
         const isFriendlyDeath = config.guild.guilds.indexOf(event.Victim.GuildName) !== -1;
+        const isAssist = event.Participants.some(participants => {
+          return config.guild.guilds.indexOf(participants.GuildName) !== -1;
+        });
 
-        if (!(isFriendlyKill || isFriendlyDeath) || event.TotalVictimKillFame < 10000) {
+        if (!(isFriendlyKill || isFriendlyDeath || isAssist)) {
           return;
         }
 
