@@ -9,7 +9,7 @@ const low = require('lowdb');
 
 const Albion = require('./AlbionApi');
 const Battle = require('./Battle').default;
-const { createImage, getItemUrl } = require('./createImage');
+const { createImage, createInventoryImage, getItemUrl } = require('./createImage');
 
 const config = require('../config');
 
@@ -155,7 +155,8 @@ function sendKillReport(event, channelId) {
     return config.guild.guilds.indexOf(participants.GuildName) !== -1;
   });
 
-  createImage('Victim', event).then(imgBuffer => {
+
+  createImage('Victim', event).then(async imgBuffer => {
     let assists = event.Participants.length - 1;
 
     let damageDone = event.Participants.reduce((accumulator, participant) => {

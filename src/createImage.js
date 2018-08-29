@@ -49,14 +49,24 @@ function createImage(target, event) {
     event[target].Equipment.Mount,
   ];
 
-  return Promise.all(equipment.map(item => item
-    ? getItemImage(item, ITEM_SIZE)
+  return Promise.all(equipment.map(item => item ? getItemImage(item, ITEM_SIZE)
     : Promise.resolve(new Jimp(ITEM_SIZE, ITEM_SIZE))
-  )).then(images => {
-    const output = new Jimp(ITEM_SIZE * 6, ITEM_SIZE + FONT_SIZE);
+  )).then(async images => {
+    let intenoryImages = await getInventoryImages(target, event);
+    let inventorySize = Math.ceil(intenoryImages.length / 6) * ITEM_SIZE + 2;
+
+    const output = new Jimp(ITEM_SIZE * 6, ITEM_SIZE + FONT_SIZE + inventorySize);
 
     for (let i = 0; i < 6; i++) {
       output.composite(images[i], ITEM_SIZE * i, FONT_SIZE);
+    }
+
+    fillRectangle(output, Jimp.rgbaToInt(128, 128, 128, 255), 0, ITEM_SIZE + FONT_SIZE + 4, ITEM_SIZE * 6, ITEM_SIZE + FONT_SIZE + 6);
+
+    for (let i = 0; i < intenoryImages.length; i++) {
+      let x = ITEM_SIZE * (i % 6);
+      let y = (FONT_SIZE + 6) + (Math.ceil((i + 1) / 6) * ITEM_SIZE);
+      output.composite(intenoryImages[i], x, y);
     }
 
     fillRectangle(output, Jimp.rgbaToInt(0, 0, 0, 255), 0, 4, ITEM_SIZE * 6, FONT_SIZE - 4);
@@ -77,7 +87,7 @@ function createImage(target, event) {
         output.crop(0, 0, ITEM_SIZE * 6, FONT_SIZE);
       }
 
-      output.quality(60);
+      output.quality(80);
       return iconsPromise;
     }).then(icons => {
       const fame = icons.fame.clone();
@@ -96,6 +106,16 @@ function createImage(target, event) {
       });
     });
   });
+}
+
+async function getInventoryImages(target, event) {
+
+  let inventory = event[target].Inventory;
+
+  return await Promise.all(inventory
+    .filter(item => item !== null)
+    .map(item => item ? getItemImage(item, ITEM_SIZE) : null)
+  );
 }
 
 module.exports = { createImage, getItemImage, getItemUrl };
