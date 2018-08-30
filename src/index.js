@@ -151,8 +151,8 @@ function sendBattleReport(battle, channelId) {
 
 function sendKillReport(event, channelId) {
   const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1;
-  const isAssist = event.Participants.some(participants => {
-    return config.guild.guilds.indexOf(participants.GuildName) !== -1;
+  const isAssist = event.Participants.some(participant => {
+    return config.guild.guilds.indexOf(participant.GuildName) !== -1;
   });
 
 
@@ -162,6 +162,18 @@ function sendKillReport(event, channelId) {
     let damageDone = event.Participants.reduce((accumulator, participant) => {
       return accumulator + Math.round(participant.DamageDone);
     }, 0);
+
+    let players = [];
+
+    event.Participants.forEach(participant => {
+      let name = participant.Name + ' (' + Math.round(participant.DamageDone / damageDone * 100) + '%)';
+
+      if (config.guild.guilds.indexOf(participant.GuildName) !== -1) {
+        name = '__' + name + '__';
+      }
+
+      players.push(name);
+    });
 
     const embed = {
       url: `https://albiononline.com/en/killboard/kill/${event.EventId}`,
@@ -174,31 +186,22 @@ function sendKillReport(event, channelId) {
     Object.assign(embed, {
       thumbnail: { url: getItemUrl(event.Killer.Equipment.MainHand) },
       title: `${event.Killer.Name} just killed ${event.Victim.Name}!`,
-      description: assists > 0 ? `Assisted by ${assists} other player${assists > 1 ? 's' : ''}.` : 'Solo kill!',
+      description: assists > 0 ? `Assisted by ${assists} other player${assists > 1 ? 's' : ''}: ${players.join(', ')}` : 'Solo kill!',
       fields: [{
-        name: isFriendlyKill ? 'Victim\'s Guild' : 'Killer\'s Guild',
-        value: createGuildTag(event[isFriendlyKill ? 'Victim' : 'Killer']),
+        name: 'Killer\'s Guild',
+        value: createGuildTag(event.Killer),
+        inline: true,
+      }, {
+        name: 'Victim\'s Guild',
+        value: createGuildTag(event.Victim),
         inline: true,
       }, {
         name: 'Damage',
-        value: damageDone.toString()
+        value: damageDone.toString(),
+        inline: true,
       }],
       timestamp: event.TimeStamp,
     });
-
-    if (assists > 0) {
-      let participants = [];
-
-      event.Participants.forEach(participant => {
-        participants.push(participant.Name + ' (' + Math.round(participant.DamageDone / damageDone * 100) + '%)');
-      });
-
-      embed.fields.push({
-        name: 'Participants',
-        value: participants.join(', '),
-        inline: true,
-      });
-    }
 
     const files = [{ name: 'kill.png', attachment: imgBuffer }];
 

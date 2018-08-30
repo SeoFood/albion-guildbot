@@ -23,9 +23,13 @@ function getItemUrl(item) {
   ].join('');
 }
 
-function getItemImage(item, size) {
+async function getItemImage(item, size) {
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_8_WHITE);
+
   return Jimp.read(getItemUrl(item)).then(image => {
     image.resize(size, size);
+    let distance = item.Count < 10 ? 43 : 41;
+    image.print(font, distance, 40, item.Count.toString());
     return image;
   });
 }
