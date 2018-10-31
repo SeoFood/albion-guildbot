@@ -150,9 +150,11 @@ function sendBattleReport(battle, channelId) {
 }
 
 function sendKillReport(event, channelId) {
-  const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1;
+  const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1
+      || config.guild.names.indexOf(event.Killer.Name) !== -1;
   const isAssist = event.Participants.some(participant => {
-    return config.guild.guilds.indexOf(participant.GuildName) !== -1;
+    return config.guild.guilds.indexOf(participant.GuildName) !== -1
+        || config.guild.names.indexOf(participant.Name) !== -1;
   });
 
 
@@ -168,7 +170,7 @@ function sendKillReport(event, channelId) {
     event.Participants.forEach(participant => {
       let name = participant.Name + ' (' + Math.round(participant.DamageDone / damageDone * 100) + '%)';
 
-      if (config.guild.guilds.indexOf(participant.GuildName) !== -1) {
+      if (config.guild.guilds.indexOf(participant.GuildName) !== -1 || config.guild.names.indexOf(participant.Name) !== -1) {
         name = '__' + name + '__';
       }
 
@@ -222,10 +224,13 @@ function checkKillboard() {
       .forEach(event => {
         lastEventId = event.EventId;
 
-        const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1;
-        const isFriendlyDeath = config.guild.guilds.indexOf(event.Victim.GuildName) !== -1;
+        const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1
+          || config.guild.names.indexOf(event.Killer.Name) !== -1;
+        const isFriendlyDeath = config.guild.guilds.indexOf(event.Victim.GuildName) !== -1
+            || config.guild.names.indexOf(event.Victim.Name) !== -1;
         const isAssist = event.Participants.some(participants => {
-          return config.guild.guilds.indexOf(participants.GuildName) !== -1;
+          return config.guild.guilds.indexOf(participants.GuildName) !== -1
+              || config.guild.names.indexOf(participants.Name) !== -1;
         });
 
         if (!(isFriendlyKill || isFriendlyDeath || isAssist)) {

@@ -14,8 +14,9 @@ module.exports = {
   },
   guild: {
     // The name of your guild (or guilds, if the guild is large).
-    guilds: process.env.ALBION_GUILDS
-    ? process.env.ALBION_GUILDS.split(',') : [],
+    guilds: process.env.ALBION_GUILDS ? process.env.ALBION_GUILDS.split(',') : [],
+    // The names of the players who track
+    names: process.env.ALBION_NAMES ? process.env.ALBION_NAMES.split(',') : [],
     // The alliance your guild belongs to
     alliance: process.env.ALBION_ALLIANCE
   },
