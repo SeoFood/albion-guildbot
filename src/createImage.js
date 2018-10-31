@@ -31,6 +31,8 @@ async function getItemImage(item, size) {
     let distance = item.Count < 10 ? 43 : 41;
     image.print(font, distance, 40, item.Count.toString());
     return image;
+  }).catch(() => {
+    return new Jimp(ITEM_SIZE * 6, ITEM_SIZE + FONT_SIZE);
   });
 }
 
