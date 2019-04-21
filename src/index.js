@@ -51,8 +51,8 @@ bot.on('ready', () => {
   checkBattles();
   checkKillboard();
 
-  setInterval(checkBattles, 60000);
-  setInterval(checkKillboard, 30000);
+  setInterval(checkBattles, 30000);
+  setInterval(checkKillboard, 10000);
 });
 
 function checkBattles() {
