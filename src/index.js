@@ -51,8 +51,8 @@ bot.on('ready', () => {
   checkBattles();
   checkKillboard();
 
-  setInterval(checkBattles, 30000);
-  setInterval(checkKillboard, 10000);
+  setInterval(checkBattles, 60000);
+  setInterval(checkKillboard, 30000);
 });
 
 function checkBattles() {
@@ -213,35 +213,39 @@ function sendKillReport(event, channelId) {
   });
 }
 
-function checkKillboard() {
+async function checkKillboard() {
   logger.info('Checking killboard...');
-  Albion.getEvents({ limit: 51, offset: 0 }).then(events => {
-    if (!events) { return; }
+  let events = [];
+  events = events.concat(await Albion.getEvents({ limit: 50, offset: 0 }));
+  events = events.concat(await Albion.getEvents({ limit: 50, offset: 50 }));
+  events = events.concat(await Albion.getEvents({ limit: 50, offset: 100 }));
 
-    events.sort((a, b) => a.EventId - b.EventId)
-      .filter(event => event.EventId > lastEventId)
-      .filter(event => event.TotalVictimKillFame >= config.kill.minFame)
-      .forEach(event => {
-        lastEventId = event.EventId;
+  if (!events) {
+    return;
+  }
 
-        const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1
-          || config.guild.names.indexOf(event.Killer.Name) !== -1;
-        const isFriendlyDeath = config.guild.guilds.indexOf(event.Victim.GuildName) !== -1
-            || config.guild.names.indexOf(event.Victim.Name) !== -1;
-        const isAssist = event.Participants.some(participants => {
-          return config.guild.guilds.indexOf(participants.GuildName) !== -1
-              || config.guild.names.indexOf(participants.Name) !== -1;
-        });
+  events.sort((a, b) => a.EventId - b.EventId)
+    .filter(event => event.EventId > lastEventId)
+    .filter(event => event.TotalVictimKillFame >= config.kill.minFame)
+    .forEach(event => {
+      lastEventId = event.EventId;
 
-        if (!(isFriendlyKill || isFriendlyDeath || isAssist)) {
-          return;
-        }
-
-        sendKillReport(event);
+      const isFriendlyKill = config.guild.guilds.indexOf(event.Killer.GuildName) !== -1
+        || config.guild.names.indexOf(event.Killer.Name) !== -1;
+      const isFriendlyDeath = config.guild.guilds.indexOf(event.Victim.GuildName) !== -1
+        || config.guild.names.indexOf(event.Victim.Name) !== -1;
+      const isAssist = event.Participants.some(participants => {
+        return config.guild.guilds.indexOf(participants.GuildName) !== -1
+          || config.guild.names.indexOf(participants.Name) !== -1;
       });
 
-    db.set('recents.eventId', lastEventId).write();
-  });
+      if (!(isFriendlyKill || isFriendlyDeath || isAssist)) {
+        return;
+      }
+      sendKillReport(event);
+    });
+
+  db.set('recents.eventId', lastEventId).write();
 }
 
 function createGuildTag(player) {
